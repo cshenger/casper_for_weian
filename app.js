@@ -1,6 +1,17 @@
-var casper = require('casper').create(); 
+var fs = require('fs');
+var casper = require('casper').create();
+var args = casper.cli.args; 
 
 var links = [];
+var address = args;
+var file = 'timelist_' + (new Date()).getTime() + '.txt';
+var txtData = '';
+
+function fsWrite() {
+  fs.write(file, txtData, function(err) {
+    if (err) return err;
+  });
+}
 
 function getLinks() {
   links = document.querySelectorAll('a');
@@ -47,21 +58,33 @@ casper.then(function() {
   this.wait(1000,function() {  
     this.echo('Login Successfully.'); 
   });
+  console.log('isNoAddress: ' + (address == ''));
 });
 
-casper.thenOpen('http://10.1.1.120/CRM/index', function() {
+casper.thenOpen(''+address+'', function() {
   this.echo('应该是登陆了');
   this.echo('html the url: ' + this.getCurrentUrl());
-});  
+  this.echo('this title is: ' + this.getTitle());
+  this.echo('<=======================start========================>');
+
+  txtData = (new Date()).toLocaleString() + '\r\n' 
+          + '<=======================start========================>\r\n' 
+          + 'html the url: ' + this.getCurrentUrl() + '\r\n';
+  fsWrite();
+});
+
 
 casper.then(function() {
   var index = 0;
   links = this.evaluate(getLinks);
-  console.log(links.length);
+
+  console.log('the links length: ' + links.length);
+  txtData += 'the links length: ' + links.length + '\r\n';
 
   casper.repeat(links.length, function() {
     var timestart = Date.now();
     this.thenOpen(links[index], function() {
+
       var timend = Date.now() - timestart;
       this.echo('Page url is ' + this.getCurrentUrl());
       this.echo('Page title is ' + this.getTitle() + ' index: ' + index);
@@ -72,12 +95,33 @@ casper.then(function() {
       }
       this.echo('-----------------------------------------------------')
       index++;
-    });
+
+      function timeOutTxt() {
+        if (timend > 800) {
+          return 'Page Times is ' + timend + ' is timeout 800\r\n'
+        } else {
+          return 'Page Times is ' + timend + '\r\n'
+        }
+      }
+
+      txtData += 'Page url is ' + this.getCurrentUrl() + '\r\n'
+        + 'Page title is ' + this.getTitle() + ' index: ' + index + '\r\n'
+        + timeOutTxt()
+        + '-----------------------------------------------------\r\n';
+      fsWrite();
+
+
+    }); 
   });
+
 })
 
 casper.then(function() {
   this.echo('<========================end=========================>');
+
+  txtData += '<========================end=========================>';
+  fsWrite();
+
   this.exit();
 });
 
