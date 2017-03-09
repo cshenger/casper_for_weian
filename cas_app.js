@@ -1,3 +1,9 @@
+/*
+  用法：
+  默认首页： casperjs cas_app.js
+  指定地址： casperjs cas_app.js YOUR_URL 
+*/
+
 var fs = require('fs');
 var casper = require('casper').create();
 var args = casper.cli.args; 
@@ -7,12 +13,14 @@ var address = args;
 var file = 'timelist_' + (new Date()).getTime() + '.txt';
 var txtData = '';
 
+// 生成txt函数
 function fsWrite() {
   fs.write(file, txtData, function(err) {
     if (err) return err;
   });
 }
 
+// 获取项目指定页面的url并过滤空连接和登出链接的url
 function getLinks() {
   links = document.querySelectorAll('a');
   var aAray = [];
@@ -61,6 +69,7 @@ casper.then(function() {
   console.log('isNoAddress: ' + (address == ''));
 });
 
+// 默认不传参数会进入登录后的首页，这里也可以给定另一个地址
 casper.thenOpen(''+address+'', function() {
   this.echo('应该是登陆了');
   this.echo('html the url: ' + this.getCurrentUrl());
